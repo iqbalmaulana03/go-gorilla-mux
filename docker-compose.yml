@@ -1,0 +1,27 @@
+version: '3.9'
+
+services:
+  go-app:
+    container_name: go-app
+    image: ahmadiqbal/go-app:1.0.1
+    build: .
+    environment:
+      DATABASE_URL: "host=go_db user=postgres password=postgres dbname=gorilla_db sslmode=disable"
+    ports:
+      - "8787:8787"
+    depends_on:
+      - go_db
+  go_db:
+    container_name: go_db
+    image: postgres:12
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: gorilla_db  # Ubah nama database di sini
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:  
+  pgdata: {}
