@@ -112,19 +112,31 @@ func createUser(db *sql.DB) http.HandlerFunc {
 func updateUser(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		var u User
-		json.NewDecoder(r.Body).Decode(&u)
+		var existingUser User
 
 		vars := mux.Vars(r)
 		id := vars["id"]
 
-		_, err := db.Exec("UPDATE users SET name = $1, email = $2 WHERE id = $3", u.Name, u.Email, id)
+		err := db.QueryRow("SELECT * FROM users WHERE id = $1", id).Scan(&existingUser.ID, &existingUser.Name, &existingUser.Email)
+		if err != nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		var updatedUser User
+		json.NewDecoder(r.Body).Decode(&updatedUser)
+
+		existingUser.Name = updatedUser.Name
+		existingUser.Email = updatedUser.Email
+
+		_, err = db.Exec("UPDATE users SET name = $1, email = $2 WHERE id = $3", updatedUser.Name, updatedUser.Email, id)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		json.NewEncoder(w).Encode(u)
+		json.NewEncoder(w).Encode(existingUser)
+
 	}
 }
 
